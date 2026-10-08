@@ -13,11 +13,20 @@ export default function ContactSection() {
 
   const [submitted, setSubmitted] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState(false);
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(personalDetails.email);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2500);
+  };
+
+  const handleCopyPhone = () => {
+    if (personalDetails.phone) {
+      navigator.clipboard.writeText(personalDetails.phone);
+      setCopiedPhone(true);
+      setTimeout(() => setCopiedPhone(false), 2500);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -62,7 +71,7 @@ export default function ContactSection() {
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider mono-font">Direct Contact</span>
                 <h3 className="syne-font text-2xl font-bold text-white">Contact Details</h3>
                 <p className="text-xs text-slate-400">
-                  Feel free to reach out via email or connect on LinkedIn / GitHub.
+                  Feel free to reach out via email, phone, or connect on LinkedIn / GitHub.
                 </p>
               </div>
 
@@ -88,6 +97,33 @@ export default function ContactSection() {
                   </button>
                 </div>
               </div>
+
+              {/* Phone Box */}
+              {personalDetails.phone && (
+                <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                        <Phone className="w-5 h-5" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] text-slate-400 uppercase tracking-wider mono-font">Phone Number</span>
+                        <a href={`tel:${personalDetails.phone}`} className="text-sm font-bold text-white hover:text-cyan-400 transition-colors">
+                          {personalDetails.phone}
+                        </a>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleCopyPhone}
+                      className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                      title="Copy Phone Number"
+                    >
+                      {copiedPhone ? <Check className="w-4 h-4 text-cyan-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Location & Status */}
               <div className="space-y-3">

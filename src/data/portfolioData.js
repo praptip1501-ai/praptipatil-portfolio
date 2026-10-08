@@ -4,6 +4,7 @@ export const personalDetails = {
   tagline: "Building High-Converting D2C E-Commerce Stores & Modern Web Applications",
   location: "Nagpur, Maharashtra, India",
   email: "praptip.1501@gmail.com",
+  phone: "+91 9604904854",
   github: "https://github.com/praptip1501-ai",
   linkedin: "https://linkedin.com/in/prapti-patil-sd",
   experienceYears: "3+",
