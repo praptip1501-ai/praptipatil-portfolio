@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Send, Copy, Check, MapPin, Github, Linkedin, Sparkles, Phone, Clock } from 'lucide-react';
+import { Mail, Send, Copy, Check, MapPin, Github, Linkedin, Sparkles, Phone, Clock, Loader2, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { personalDetails } from '../data/portfolioData';
 
@@ -12,6 +12,8 @@ export default function ContactSection() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
@@ -29,24 +31,59 @@ export default function ContactSection() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) return;
 
-    // Trigger celebratory confetti burst!
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
+    setIsSubmitting(true);
+    setErrorMessage('');
 
-    setSubmitted(true);
+    try {
+      const response = await fetch(`https://formsubmit.co/ajax/${personalDetails.email}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          projectType: formData.projectType,
+          message: formData.message,
+          _subject: `Portfolio Contact Form: ${formData.name} - ${formData.projectType}`,
+          _template: 'table',
+          _captcha: 'false'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success !== 'false') {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        setSubmitted(true);
+      } else {
+        throw new Error(data.message || 'Failed to send message.');
+      }
+    } catch (error) {
+      console.error('Contact Form Submission Error:', error);
+      // Fallback: open mailto link if API fails
+      const mailtoUrl = `mailto:${personalDetails.email}?subject=${encodeURIComponent(`Portfolio Inquiry from ${formData.name}`)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\nProject Type: ${formData.projectType}\n\nMessage:\n${formData.message}`)}`;
+      window.location.href = mailtoUrl;
+
+      setErrorMessage('Direct form delivery failed, so your email client was opened automatically to send the message directly to ' + personalDetails.email);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <section id="contact" className="py-24 relative bg-[#090e1a]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="flex flex-col items-center text-center space-y-3 mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-emerald-400 text-xs font-semibold uppercase tracking-wider mono-font">
@@ -62,10 +99,10 @@ export default function ContactSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
-          
+
           {/* Left Contact Info Cards */}
           <div className="lg:col-span-5 glass-card rounded-2xl p-6 sm:p-8 border border-slate-800 flex flex-col justify-between space-y-6">
-            
+
             <div className="space-y-6">
               <div className="space-y-2">
                 <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider mono-font">Direct Contact</span>
@@ -195,7 +232,7 @@ export default function ContactSection() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  
+
                   {/* Name Input */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-300 mono-font">Your Name *</label>
@@ -234,7 +271,6 @@ export default function ContactSection() {
                   >
                     <option value="Shopify Theme Development">Shopify Theme Development / Customization</option>
                     <option value="Custom Liquid Sections">Custom Liquid Sections & Metafields</option>
-                    <option value="Front-End React Application">Front-End React Web Application</option>
                     <option value="Full Store Speed & CRO Optimization">Full Store Speed & CRO Optimization</option>
                     <option value="Full-Time Role Inquiry">Full-Time Role / Hiring Inquiry</option>
                   </select>
@@ -253,13 +289,30 @@ export default function ContactSection() {
                   ></textarea>
                 </div>
 
+                {errorMessage && (
+                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5 text-xs text-amber-300">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-95"
+                  disabled={isSubmitting}
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-bold text-sm shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-95"
                 >
-                  <span>Send Message</span>
-                  <Send className="w-4 h-4" />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send Message</span>
+                      <Send className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </form>
             )}
